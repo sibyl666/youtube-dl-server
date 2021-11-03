@@ -1,4 +1,4 @@
 dist
 videos
 node_modules
-*.ts
+*.js
