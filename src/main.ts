@@ -1,39 +1,34 @@
 import { exec } from "child_process";
+import { getIdFromStdout } from "./utils";
 import express from "express";
 const app = express();
 
-const idRegex = /(?<id>(\?v=(\w*))|(\w*$))/;
-const destRegex = /Destination: .\/videos\/(?<dest>.*)/
+const isYoutubeRegex = /^(https?\:\/\/)?(www\.)?(youtube\.com|youtu\.?be)(\/.+$)/;
 
 app.get("/", (req, res) => {
-  const url = req.query.url as string;
-  if (!url) {
+  const queryUrl = req.query.url as string;
+  if (!queryUrl) {
     res.status(504).send("url is not present!");
     return;
   }
 
-  var id;
-  var match = idRegex.exec(url);
-  if ((id = match?.groups?.id) == null) {
-    res.status(504).send("problem with the url");
-    return
+  let match = isYoutubeRegex.exec(queryUrl);
+  if (!match || match == null) {
+    res.status(400).send("There is a problem with the url or the url is not from youtube!");
+    return;
   }
-  console.log("id", id);
 
-  exec(`yt-dlp https://www.youtube.com/watch?v=${id} -P ./videos -o '%(id)s.%(ext)s'`,
-    (err, stdout, stderr) => {
-      if (err) {
-        console.log(err);
-        return;
-      }
-
-      let match = destRegex.exec(stdout);
-      let path = match?.groups?.dest;
-      res.send({
-        fileUri: path
-      })
+  exec(`yt-dlp ${queryUrl} -P ./src/videos -o %(id)s.%(ext)s`, (err, stdout, stderr) => {
+    let fileMatch = getIdFromStdout(stdout);
+    if (!fileMatch) {
+      res.status(500).send("Can't get id from the downloaded local file!");
+      return;
     }
-  )
+
+    res.send({
+      fileUri: fileMatch[1]
+    });
+  })
 })
 
 app.listen(8000, () => console.log("listening on port 8000!"));
