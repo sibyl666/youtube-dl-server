@@ -18,7 +18,7 @@ app.get("/", (req, res) => {
     return;
   }
 
-  exec(`yt-dlp ${queryUrl} -P ./src/videos -o %(id)s.%(ext)s`, (err, stdout, stderr) => {
+  exec(`yt-dlp ${queryUrl} -P './src/videos' -o '%(id)s.%(ext)s'`, (err, stdout, stderr) => {
     let fileMatch = getIdFromStdout(stdout);
     if (!fileMatch) {
       res.status(500).send("Can't get id from the downloaded local file!");
