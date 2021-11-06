@@ -1,7 +1,7 @@
 import { exec } from "child_process";
 import { getIdFromStdout } from "./utils";
 import { readFile } from "fs";
-import express from "express";
+import express, { query } from "express";
 const app = express();
 
 // const isYoutubeRegex = /^(https?\:\/\/)?(www\.)?(youtube\.com|youtu\.?be)(\/.+$)/;
@@ -13,11 +13,14 @@ app.get("/", (req, res) => {
     return;
   }
 
+  console.log(queryUrl);
   exec(`yt-dlp ${queryUrl} -P "${__dirname}/videos" -o "%(id)s.%(ext)s" \
     --write-thumbnail \
     --write-info-json
   `,
   async (err, stdout) => {
+    console.log(stdout);
+
     if (err) {
       res.status(500).send(err);
       return;
