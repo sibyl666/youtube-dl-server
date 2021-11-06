@@ -13,7 +13,7 @@ app.get("/", (req, res) => {
     return;
   }
 
-  exec(`yt-dlp ${queryUrl} -P ${__dirname}/videos -o %(id)s.%(ext)s \
+  exec(`yt-dlp ${queryUrl} -P "${__dirname}/videos" -o "%(id)s.%(ext)s" \
     --write-thumbnail \
     --write-info-json
   `,
