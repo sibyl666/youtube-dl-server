@@ -1,9 +1,10 @@
 import { exec } from "child_process";
 import { getIdFromStdout } from "./utils";
+import { readFile } from "fs";
 import express from "express";
 const app = express();
 
-const isYoutubeRegex = /^(https?\:\/\/)?(www\.)?(youtube\.com|youtu\.?be)(\/.+$)/;
+// const isYoutubeRegex = /^(https?\:\/\/)?(www\.)?(youtube\.com|youtu\.?be)(\/.+$)/;
 
 app.get("/", (req, res) => {
   const queryUrl = req.query.url as string;
@@ -12,22 +13,34 @@ app.get("/", (req, res) => {
     return;
   }
 
-  let match = isYoutubeRegex.exec(queryUrl);
-  if (!match || match == null) {
-    res.status(400).send("There is a problem with the url or the url is not from youtube!");
-    return;
-  }
-
-  exec(`yt-dlp ${queryUrl} -P './src/videos' -o '%(id)s.%(ext)s'`, (err, stdout, stderr) => {
-    let fileMatch = getIdFromStdout(stdout);
-    if (!fileMatch) {
-      res.status(500).send("Can't get id from the downloaded local file!");
+  exec(`yt-dlp ${queryUrl} -P ${__dirname}/videos -o %(id)s.%(ext)s \
+    --write-thumbnail \
+    --write-info-json
+  `,
+  async (err, stdout) => {
+    if (err) {
+      res.status(500).send(err);
       return;
     }
 
-    res.send({
-      fileUri: fileMatch[1]
-    });
+    const match  = getIdFromStdout(stdout);
+    if (!match) {
+      res.status(500).send("Can't get ID from the downloaded local file!");
+      return;
+    }
+
+    readFile(`${__dirname}/videos/${match[1]}.info.json`, (err, data) => {
+      if (err) {
+        res.status(500).send("Can't read local json file!");
+        return;
+      }
+
+      const content = JSON.parse(data.toString());
+      res.send({
+        fileUri: match[0],
+        thumbnail: content.thumbnails[content.thumbnails.length - 1]
+      })
+    })
   })
 })
 
