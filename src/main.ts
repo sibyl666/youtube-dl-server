@@ -14,7 +14,7 @@ app.get("/", (req, res) => {
   }
 
   console.log(queryUrl);
-  exec(`yt-dlp "${queryUrl}"" -P "${__dirname}/videos" -o "%(id)s.%(ext)s" \
+  exec(`yt-dlp "${queryUrl}" -P "${__dirname}/videos" -o "%(id)s.%(ext)s" \
     --write-thumbnail \
     --write-info-json
   `,
