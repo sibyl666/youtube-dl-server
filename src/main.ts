@@ -10,14 +10,14 @@ import { spawn } from "child_process";
 
 const videoRegex = /(\w*)\.mp4/;
 
-app.get("/videos/:fileUri", (req, res) => {
-  let fileUri = req.params.fileUri;
+// app.get("/videos/:fileUri", (req, res) => {
+//   let fileUri = req.params.fileUri;
   
-  const readableStream = createReadStream(join(__dirname, `/videos/${fileUri}`));
-  readableStream.on("open", () => {
-    readableStream.pipe(res);
-  })
-})
+//   const readableStream = createReadStream(join(__dirname, `/videos/${fileUri}`));
+//   readableStream.on("open", () => {
+//     readableStream.pipe(res);
+//   })
+// })
 
 
 app.get("/", (req, res) => {
