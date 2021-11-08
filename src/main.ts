@@ -1,25 +1,11 @@
-import { exec } from "child_process";
-import { getIdFromStdout } from "./utils";
-import { readFile, createReadStream } from "fs";
-import { join } from "path";
+import { spawn } from "child_process";
+import { sleep } from "./utils";
+import { readFile } from "fs";
 import express from "express";
 const app = express();
 
-import { spawn } from "child_process";
-
 
 const videoRegex = /(.*)\.mp4/;
-
-// app.get("/videos/:fileUri", (req, res) => {
-//   let fileUri = req.params.fileUri;
-  
-//   const readableStream = createReadStream(join(__dirname, `/videos/${fileUri}`));
-//   readableStream.on("open", () => {
-//     readableStream.pipe(res);
-//   })
-// })
-
-
 app.get("/", (req, res) => {
   const queryUrl = req.query.url as string;
   if (!queryUrl) {
@@ -37,15 +23,17 @@ app.get("/", (req, res) => {
     "--output=%(id)s.%(ext)s",
     "--print=%(id)s.%(ext)s"
   ]);
-  child.stdout.on("data", chunk => {
+  child.stdout.on("data", async (chunk) => {
     let chunkString = chunk.toString() as string;
 
     const match = videoRegex.exec(chunkString);
     if (!match) return;
 
+    await sleep(500);
     readFile(`${__dirname}/videos/${match[1]}.info.json`, (err, data) => {
       if (err) {
         res.status(500).send("Can't read info json");
+        console.log(err);
         return;
       }
 
@@ -53,7 +41,7 @@ app.get("/", (req, res) => {
       res.send({
         fileUri: match[0],
         thumbnail: content.thumbnails[content.thumbnails.length - 1]
-      })
+      });
     })
   })
   child.stderr.on("error", err => {
@@ -62,5 +50,6 @@ app.get("/", (req, res) => {
 
   child.on("close", code => console.log("code", code));
 })
+
 
 app.listen(8000, () => console.log("listening on port 8000!"));
