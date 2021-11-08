@@ -25,6 +25,7 @@ app.get("/", (req, res) => {
   ]);
   child.stdout.on("data", async (chunk) => {
     let chunkString = chunk.toString() as string;
+    console.log(chunkString);
 
     const match = videoRegex.exec(chunkString);
     if (!match) return;
