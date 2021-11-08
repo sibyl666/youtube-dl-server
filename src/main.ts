@@ -8,7 +8,7 @@ const app = express();
 import { spawn } from "child_process";
 
 
-const videoRegex = /(\w*)\.mp4/;
+const videoRegex = /(.*)\.mp4/;
 
 // app.get("/videos/:fileUri", (req, res) => {
 //   let fileUri = req.params.fileUri;
