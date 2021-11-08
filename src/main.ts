@@ -1,11 +1,11 @@
-import { exec } from "child_process";
-import { getIdFromStdout } from "./utils";
+import { spawn } from "child_process";
+import { sleep } from "./utils";
 import { readFile } from "fs";
-import express, { query } from "express";
+import express from "express";
 const app = express();
 
-// const isYoutubeRegex = /^(https?\:\/\/)?(www\.)?(youtube\.com|youtu\.?be)(\/.+$)/;
 
+const videoRegex = /(.*)\.mp4/;
 app.get("/", (req, res) => {
   const queryUrl = req.query.url as string;
   if (!queryUrl) {
@@ -13,28 +13,28 @@ app.get("/", (req, res) => {
     return;
   }
 
-  console.log(queryUrl);
-  exec(`yt-dlp "${queryUrl}"" -P "${__dirname}/videos" -o "%(id)s.%(ext)s" \
-    --write-thumbnail \
-    --write-info-json
-  `,
-  async (err, stdout) => {
-    console.log(stdout);
+  const child = spawn(`yt-dlp`, [
+    `${queryUrl}`,
+    "--no-simulate",
+    "--no-part",
+    "--write-thumbnail",
+    "--write-info-json",
+    `-P ${__dirname}/videos`,
+    "--output=%(id)s.%(ext)s",
+    "--print=%(id)s.%(ext)s"
+  ]);
+  child.stdout.on("data", async (chunk) => {
+    let chunkString = chunk.toString() as string;
+    console.log(chunkString);
 
-    if (err) {
-      res.status(500).send(err);
-      return;
-    }
+    const match = videoRegex.exec(chunkString);
+    if (!match) return;
 
-    const match  = getIdFromStdout(stdout);
-    if (!match) {
-      res.status(500).send("Can't get ID from the downloaded local file!");
-      return;
-    }
-
+    await sleep(500);
     readFile(`${__dirname}/videos/${match[1]}.info.json`, (err, data) => {
       if (err) {
-        res.status(500).send("Can't read local json file!");
+        res.status(500).send("Can't read info json");
+        console.log(err);
         return;
       }
 
@@ -42,9 +42,15 @@ app.get("/", (req, res) => {
       res.send({
         fileUri: match[0],
         thumbnail: content.thumbnails[content.thumbnails.length - 1]
-      })
+      });
     })
   })
+  child.stderr.on("error", err => {
+    console.log("eror", err)
+  })
+
+  child.on("close", code => console.log("code", code));
 })
+
 
 app.listen(8000, () => console.log("listening on port 8000!"));
